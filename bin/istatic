@@ -1,0 +1,10 @@
+#!/usr/bin/env node
+var istatic = require('../istatic')
+  , args = process.argv.slice(2)[0]
+
+switch (args) {
+  case 'pu':
+  case 'pull':
+    istatic.pull()
+    break
+}

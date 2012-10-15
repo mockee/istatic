@@ -1,0 +1,43 @@
+{
+  "name": "istatic",
+  "description": "Static File Manager.",
+  "version": "0.1.0",
+  "homepage": "https://github.com/mockee/istatic",
+  "author": {
+    "name": "mockee",
+    "email": "mockee@gmail.com",
+    "url": "http://github.com/mockee"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mockee/istatic.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mockee/istatic/issues"
+  },
+  "licenses": [{
+    "type": "MIT",
+    "url": "http://www.opensource.org/licenses/mit-license.php"
+  }],
+  "main": "./static.js",
+  "keywords" : [
+    "static",
+    "manager"
+  ],
+  "bin": {
+    "istatic": "./bin/istatic"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "istatic.js",
+    "README.md"
+  ],
+  "engines": {
+    "node": "*"
+  },
+  "dependencies": {
+    "mkdirp": ">=0.3.4",
+    "js-yaml": ">=1.0.2"
+  }
+}
