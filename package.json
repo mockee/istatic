@@ -1,5 +1,5 @@
 {
-  "name": "istatic",
+  "name": "node-istatic",
   "description": "Static File Manager.",
   "version": "0.1.0",
   "homepage": "https://github.com/mockee/istatic",
@@ -19,7 +19,7 @@
     "type": "MIT",
     "url": "http://www.opensource.org/licenses/mit-license.php"
   }],
-  "main": "./static.js",
+  "main": "./istatic.js",
   "keywords" : [
     "static",
     "manager"
