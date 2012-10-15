@@ -4,7 +4,7 @@ Static File Manager
 
 ## Installation
 ```bash
-$ npm install node-istatic
+$ npm install -g node-istatic
 ```
 
 ### Example
