@@ -34,9 +34,7 @@ function getGitPath(url) {
 
 function getConfig(cb) {
   var CONF_FILE = 'static.yaml'
-    , path = [__dirname, CONF_FILE].join('/')
-
-  fs.readFile(path, 'utf8', function(err, data) {
+  fs.readFile(CONF_FILE, 'utf8', function(err, data) {
     if (!err) { return cb(data) }
     return logger.error('\033[31m', "There's no `"
       + CONF_FILE + "` in your app root directory.", '\033[0m')
@@ -87,15 +85,15 @@ function copyFile(src, dst, cb) {
     })
   }
 
-  logger.info(' \033[30m', src, '\033[0m->\033[30m'
-    , dst.replace(__dirname, ''), '\033[0m')
+  logger.info(' \033[30m', src
+    , '\033[0m->\033[30m', dst, '\033[0m')
 }
 
 function copy2app(repoName, files) {
   if (files) {
     for (var src in files) {
       copyFile(PATH_STATIC + repoName + src
-        , __dirname + files[src])
+        , files[src].slice(1))
     }
   }
 }
