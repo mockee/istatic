@@ -2,6 +2,7 @@
 
 var fs = require('fs')
   , util = require('util')
+  , path = require('path')
   , yaml = require('js-yaml')
   , mkdirp = require('mkdirp')
   , notify = require('./lib/event')()
@@ -28,8 +29,7 @@ function makeTmpDir() {
 }
 
 function getGitPath(url) {
-  var name = url.trim().split('/').pop()
-  return PATH_STATIC + name.substring(0, name.length - 4)
+  return PATH_STATIC + path.basename(url.trim(), '.git')
 }
 
 function getConfig(cb) {
@@ -39,10 +39,6 @@ function getConfig(cb) {
     return logger.error('\033[31m', "There's no `"
       + CONF_FILE + "` in your app root directory.", '\033[0m')
   })
-}
-
-function reset(commit) {
-  cp.exec(['git', 'reset', '--hard', commit].join(' '))
 }
 
 function copy(src, dst, cb) {
@@ -65,22 +61,23 @@ function copy(src, dst, cb) {
 }
 
 function copyFile(src, dst, cb) {
-  var pathArr = dst.split('/')
+  var sep = path.sep
+    , pathArr = dst.split(sep)
 
   if (!fs.existsSync(dst)) {
     if (!pathArr.slice(-1)[0]) {
       mkdirp.sync(dst)
     } else {
-      mkdirp.sync(pathArr.slice(0, -1).join('/'))
+      mkdirp.sync(pathArr.slice(0, -1).join(sep))
     }
   }
 
   if (fs.statSync(src).isFile()) {
-    copy(src, dst + src.split('/').slice(-1)[0])
+    copy(src, dst + src.split(sep).slice(-1)[0])
   } else if (fs.statSync(src).isDirectory()) {
     fs.readdir(src, function(err, list) {
       list.forEach(function(name) {
-        copyFile([src, name].join('/'), dst)
+        copyFile([src, name].join(sep), dst)
       })
     })
   }
@@ -98,40 +95,68 @@ function copy2app(repoName, files) {
   }
 }
 
+function clone(url, path) {
+  logger.info(url)
+  return cp
+    .exec(['git clone', url, path].join(' '))
+    .done(function(err, stdout, stderr) {
+      logger.info(stdout.split('\n')[0])
+    })
+}
+
+function reset(name, commit) {
+  var cwd = process.cwd()
+  process.chdir(PATH_STATIC + name)
+  return cp
+    .exec('git reset --hard ' + commit)
+    .done(function() {
+      process.chdir(cwd)
+    })
+}
+
 function pull() {
   makeTmpDir()
   getConfig(function(data) {
-    var commit, files
+    var commit, tag, files
       , repo, repoUrl, repoPath
       , conf = yaml.load(data)
       , repos = conf.repos
 
     for (var name in repos) {
       repo = repos[name]
-      commit = 'version' in repo
-        ? repo.version : ''
-
       repoUrl = 'url' in repo
         ? repo.url
         : repoUrl = 'http://code.dapps.douban.com/{name}.git'
             .replace('{name}', name)
 
       repoPath = getGitPath(repoUrl)
-      files = repo.file || null
 
       if (fs.existsSync(repoPath)) {
-        copy2app(name, files)
+        copy2app(name, repo.file)
       } else {
         (function(name) {
-          cp.exec(['git', 'clone', repoUrl, repoPath].join(' '))
-            .done(function(err, stdout, stderr) {
-              logger.info(stdout.split('\n')[0])
-              files = repos[name].file
-              copy2app(name, files)
-            })
-            .fail(function(err) {
-              logger.error(err)
-            })
+          var cloning = clone(repoUrl, repoPath)
+          cloning.done(function() {
+            repo = repos[name]
+            if ('tag' in repo) { commit = repo.tag }
+            if ('commit' in repo) { commit = repo.commit }
+
+            if (commit) {
+              (function(name, commit) {
+                reset(name, commit).done(function() {
+                  logger.info('HEAD is now at', commit)
+                  copy2app(name, repos[name].file)
+                }).fail(function(err) {
+                  logger.error(err)
+                })
+              })(name, commit)
+            } else {
+              copy2app(name, repo.file)
+            }
+          })
+          .fail(function(err) {
+            logger.error(err)
+          })
         })(name)
       }
     }
@@ -139,4 +164,4 @@ function pull() {
 }
 
 exports.pull = pull
-exports.version = '0.1.2'
+exports.version = '0.1.3'
