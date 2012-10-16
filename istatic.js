@@ -139,3 +139,4 @@ function pull() {
 }
 
 exports.pull = pull
+exports.version = '0.1.2'
