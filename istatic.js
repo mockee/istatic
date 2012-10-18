@@ -77,7 +77,11 @@ function copyFile(src, dst, cb) {
   } else if (fs.statSync(src).isDirectory()) {
     fs.readdir(src, function(err, list) {
       list.forEach(function(name) {
-        copyFile([src, name].join(sep), dst)
+        var tempDst = dst
+        if (fs.statSync([src, name].join(sep)).isDirectory()) {
+         tempDst += name + sep
+        }
+        copyFile([src, name].join(sep), tempDst)
       })
     })
   }
