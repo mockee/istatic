@@ -1,14 +1,18 @@
 #!/usr/bin/env node
+/*jshint node:true */
 
 var fs = require('fs')
   , util = require('util')
   , path = require('path')
   , yaml = require('js-yaml')
   , mkdirp = require('mkdirp')
-  , notify = require('./lib/event')()
+  , difflib = require('difflib')
   , cp = require('child_process')
+
+  , notify = require('./lib/event')()
   , logger = Object.create(console)
   , PATH_STATIC = '.statictmp/'
+  , cwd = process.cwd()
 
 cp.exec = (function(fn) {
   var self = this, fuid = 0
@@ -41,6 +45,10 @@ function getConfig(cb) {
   })
 }
 
+function outputs(err, stdout, stderr) {
+  logger.info(stdout.split('\n')[0])
+}
+
 function copy(src, dst, cb) {
   function copyHelper(err) {
     var is, os
@@ -65,22 +73,25 @@ function copyFile(src, dst, cb) {
     , pathArr = dst.split(sep)
 
   if (!fs.existsSync(dst)) {
-    if (!pathArr.slice(-1)[0]) {
-      mkdirp.sync(dst)
-    } else {
-      mkdirp.sync(pathArr.slice(0, -1).join(sep))
-    }
+    mkdirp.sync(!pathArr.slice(-1)[0]
+      ? dst : pathArr.slice(0, -1).join(sep))
   }
 
   if (fs.statSync(src).isFile()) {
-    copy(src, dst + src.split(sep).slice(-1)[0])
+    var dstFile = dst + src.split(sep).slice(-1)[0]
+
+    if (fs.existsSync(dstFile)
+      && diffRatio(src, dstFile) !== 1) {
+      // TODO Using `readlines` to deal with status
+      return logger.info('`' + dstFile + '`'
+        , 'has been modified in local. Ignord automatically.')
+    }
+    copy(src, dstFile)
   } else if (fs.statSync(src).isDirectory()) {
-    fs.readdir(src, function(err, list) {
-      list.forEach(function(name) {
-        var srcPath = [src, name].join(sep)
-          , isDir = fs.statSync(srcPath).isDirectory()
-        copyFile(srcPath, isDir ? dst + name + sep : dst)
-      })
+    fs.readdirSync(src).forEach(function(name) {
+      var srcPath = [src, name].join(sep)
+        , isDir = fs.statSync(srcPath).isDirectory()
+      copyFile(srcPath, isDir ? dst + name + sep : dst)
     })
   }
 
@@ -89,31 +100,43 @@ function copyFile(src, dst, cb) {
 }
 
 function copy2app(repoName, files) {
-  if (files) {
-    for (var src in files) {
-      copyFile(PATH_STATIC + repoName + src
-        , files[src].slice(1))
-    }
+  for (var src in files) {
+    copyFile(PATH_STATIC + repoName + src
+      , files[src].slice(1))
   }
 }
 
 function clone(url, path) {
-  logger.info(url)
   return cp
     .exec(['git clone', url, path].join(' '))
-    .done(function(err, stdout, stderr) {
-      logger.info(stdout.split('\n')[0])
+    .done(outputs)
+}
+
+function pulldown(name) {
+  process.chdir(PATH_STATIC + name)
+  return cp.exec('git pull')
+    .done(function(err, stdout) {
+      logger.log('`' + name + '`'
+        , stdout.split('\n')[0])
+      process.chdir(cwd)
     })
 }
 
 function reset(name, commit) {
-  var cwd = process.cwd()
   process.chdir(PATH_STATIC + name)
   return cp
     .exec('git reset --hard ' + commit)
     .done(function() {
       process.chdir(cwd)
     })
+}
+
+function diffRatio(src, dst) {
+  src = fs.readFileSync(src, 'UTF-8')
+  dst = fs.readFileSync(dst, 'UTF-8')
+  return (new difflib
+    .SequenceMatcher(null, src, dst))
+    .quickRatio()
 }
 
 function pull() {
@@ -125,18 +148,21 @@ function pull() {
       , repos = conf.repos
 
     for (var name in repos) {
-      repo = repos[name]
-      repoUrl = 'url' in repo
-        ? repo.url
-        : repoUrl = 'http://code.dapps.douban.com/{name}.git'
-            .replace('{name}', name)
+      (function(name) {
+        repo = repos[name]
+        repoUrl = 'url' in repo
+          ? repo.url
+          : repoUrl = 'http://code.dapps.douban.com/{name}.git'
+              .replace('{name}', name)
 
-      repoPath = getGitPath(repoUrl)
+        repoPath = getGitPath(repoUrl)
 
-      if (fs.existsSync(repoPath)) {
-        copy2app(name, repo.file)
-      } else {
-        (function(name) {
+        if (fs.existsSync(repoPath)) {
+          pulldown(name).done(function() {
+            logger.info('Starting to copy files...')
+            copy2app(name, repos[name].file)
+          })
+        } else {
           var cloning = clone(repoUrl, repoPath)
           cloning.done(function() {
             repo = repos[name]
@@ -159,11 +185,11 @@ function pull() {
           .fail(function(err) {
             logger.error(err)
           })
-        })(name)
-      }
+        }
+      })(name)
     }
   })
 }
 
 exports.pull = pull
-exports.version = '0.1.3'
+exports.version = '0.1.4'
