@@ -16,19 +16,19 @@ Put a file named `static.yaml` to the root of your project repository.
 ```yaml
 repos:
   backbone:
-    tag: v0.9.2
+    tag: 0.9.2
     url: git://github.com/documentcloud/backbone.git
     file:
       /backbone.js: /public/js/lib/backbone/
 
   lodash:
-    tag: v0.8.2
+    tag: 0.8.2
     url: git://github.com/bestiejs/lodash.git
     file:
       /lodash.js: /public/js/lib/
 ```
 
-and then
+and then, run:
 
 ```bash
 $ istatic pull
