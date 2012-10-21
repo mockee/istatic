@@ -78,7 +78,9 @@ function copyFile(src, dst, cb) {
   }
 
   if (fs.statSync(src).isFile()) {
-    var dstFile = dst + src.split(sep).slice(-1)[0]
+    var dstIsDir = dst.substr(-1) === sep
+      , dstFile = dstIsDir ? dst + src.split(sep).slice(-1)[0]
+                           : dst
 
     if (fs.existsSync(dstFile)
       && diffRatio(src, dstFile) !== 1) {
