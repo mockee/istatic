@@ -163,27 +163,24 @@ function pull() {
             copy2app(name, repos[name].file)
           })
         } else {
-          var cloning = clone(repoUrl, repoPath)
-          cloning.done(function() {
+          clone(repoUrl, repoPath).then(function() {
             repo = repos[name]
-            if ('tag' in repo) { commit = repo.tag }
-            if ('commit' in repo) { commit = repo.commit }
+            files = repo.file || {}
+            commit = repo.tag || repo.commit
 
-            if (commit) {
-              (function(name, commit) {
-                reset(name, commit).done(function() {
-                  logger.info('HEAD is now at', commit)
-                  copy2app(name, repos[name].file)
-                }).fail(function(err) {
-                  logger.error(err)
-                })
-              })(name, commit)
+            if (!commit) {
+              notify.resolve(name)
             } else {
-              copy2app(name, repo.file)
+              reset(name, commit).done(function() {
+                logger.info('HEAD is now at', commit)
+                notify.resolve(name)
+              })
             }
+
+            return notify.promise(name)
           })
-          .fail(function(err) {
-            logger.error(err)
+          .follow().done(function() {
+            copy2app(name, files)
           })
         }
       })(name)
