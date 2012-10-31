@@ -15,17 +15,17 @@ Put a file named `static.yaml` to the root of your project repository.
 
 ```yaml
 repos:
-  backbone:
-    tag: 0.9.2
-    url: git://github.com/documentcloud/backbone.git
-    file:
-      /backbone.js: /public/js/lib/backbone/
-
   lodash:
     tag: 0.8.2
     url: git://github.com/bestiejs/lodash.git
     file:
       /lodash.js: /public/js/lib/
+  OzJS:
+    commit: 95cf1fec22
+    url: https://github.com/dexteryy/OzJS.git
+    file:
+      /oz.js: /public/js/lib/
+      /mod/event.js: /public/js/lib/mod/
 ```
 
 and then, run:
