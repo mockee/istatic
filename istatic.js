@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/*jshint node:true */
+/*jshint node:true loopfunc:true */
 
 var fs = require('fs')
   , util = require('util')
@@ -79,12 +79,9 @@ function copyFile(src, dst, cb) {
 
   if (fs.statSync(src).isFile()) {
     var dstIsDir = dst.substr(-1) === sep
-      , dstFile = dstIsDir ? dst + src.split(sep).slice(-1)[0]
-                           : dst
+      , dstFile = dstIsDir ? dst + src.split(sep).slice(-1)[0] : dst
 
-    if (fs.existsSync(dstFile)
-      && diffRatio(src, dstFile) !== 1) {
-      // TODO Using `readlines` to deal with status
+    if (!coverFile(src, dstFile)) {
       return logger.info('`' + dstFile + '`'
         , 'has been modified in local. Ignord automatically.')
     }
@@ -99,6 +96,11 @@ function copyFile(src, dst, cb) {
 
   logger.info(' \033[30m', src
     , '\033[0m->\033[30m', dst, '\033[0m')
+}
+
+function coverFile(src, dstFile) {
+  if (!fs.existsSync(dstFile)) { return true }
+  return !localModified(src, dstFile)
 }
 
 function copy2app(repoName, files) {
@@ -133,12 +135,19 @@ function reset(name, commit) {
     })
 }
 
-function diffRatio(src, dst) {
-  src = fs.readFileSync(src, 'UTF-8')
-  dst = fs.readFileSync(dst, 'UTF-8')
-  return (new difflib
-    .SequenceMatcher(null, src, dst))
-    .quickRatio()
+function getMtime(file) {
+  return (new Date(fs.statSync(file).mtime)).getTime()
+}
+
+function localModified(src, dst) {
+  var srcStr = fs.readFileSync(src, 'UTF-8')
+    , dstStr = fs.readFileSync(dst, 'UTF-8')
+    , diffRatio = (new difflib
+      .SequenceMatcher(null, srcStr, dstStr))
+      .quickRatio()
+
+  return getMtime(dst) > getMtime(src)
+    && diffRatio !== 1
 }
 
 function pull() {
@@ -191,4 +200,4 @@ function pull() {
 }
 
 exports.pull = pull
-exports.version = '0.1.4'
+exports.version = '0.1.6'
