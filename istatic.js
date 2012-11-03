@@ -104,6 +104,7 @@ function coverFile(src, dstFile) {
 }
 
 function copy2app(repoName, files) {
+  logger.info('Starting to copy files...')
   for (var src in files) {
     copyFile(PATH_STATIC + repoName + src
       , files[src].slice(1))
@@ -128,11 +129,7 @@ function pulldown(name) {
 
 function reset(name, commit) {
   process.chdir(PATH_STATIC + name)
-  return cp
-    .exec('git reset --hard ' + commit)
-    .done(function() {
-      process.chdir(cwd)
-    })
+  return cp.exec('git reset --hard ' + commit)
 }
 
 function getMtime(file) {
@@ -168,32 +165,36 @@ function pull() {
 
         repoPath = getGitPath(repoUrl)
 
-        if (fs.existsSync(repoPath)) {
-          pulldown(name).done(function() {
-            logger.info('Starting to copy files...')
-            copy2app(name, repos[name].file)
-          })
-        } else {
-          clone(repoUrl, repoPath).then(function() {
-            repo = repos[name]
-            files = repo.file || {}
-            commit = repo.tag || repo.commit
-
-            if (!commit) {
-              notify.resolve(name)
-            } else {
-              reset(name, commit).done(function() {
-                logger.info('HEAD is now at', commit)
-                notify.resolve(name)
-              })
-            }
-
-            return notify.promise(name)
-          })
-          .follow().done(function() {
-            copy2app(name, files)
-          })
+        function hasCloned(repo) {
+          process.chdir(cwd)
+          return fs.existsSync(repo)
         }
+
+        function pulling() {
+          repo = repos[name]
+          files = repo.file || {}
+          commit = repo.tag || repo.commit
+
+          if (!commit) {
+            pulldown(name).done(function() {
+              copy2app(name, repos[name].file)
+            })
+          } else {
+            reset(name, commit).done(function() {
+              process.chdir(cwd)
+              logger.info('HEAD is now at', commit)
+              copy2app(name, repos[name].file)
+            })
+          }
+        }
+        
+        if (hasCloned(repoPath)) {
+          return pulling(name)
+        }
+
+        clone(repoUrl, repoPath)
+          .done(function() { pulling(name) })
+
       })(name)
     }
   })
