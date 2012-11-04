@@ -83,7 +83,7 @@ function copyFile(src, dst, cb) {
 
     if (!coverFile(src, dstFile)) {
       return logger.info('`' + dstFile + '`'
-        , 'has been modified in local. Ignord automatically.')
+        , 'has been modified in local. Ignored automatically.')
     }
     copy(src, dstFile)
   } else if (fs.statSync(src).isDirectory()) {
