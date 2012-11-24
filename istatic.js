@@ -1,10 +1,9 @@
 #!/usr/bin/env node
-/*jshint node:true loopfunc:true */
+/*jshint node:true loopfunc:true*/
 
 var fs = require('fs')
   , util = require('util')
   , path = require('path')
-  , yaml = require('js-yaml')
   , mkdirp = require('mkdirp')
   , difflib = require('difflib')
   , cp = require('child_process')
@@ -36,13 +35,22 @@ function getGitPath(url) {
   return PATH_STATIC + path.basename(url.trim(), '.git')
 }
 
-function getConfig(cb) {
-  var CONF_FILE = 'static.yaml'
-  fs.readFile(CONF_FILE, 'utf8', function(err, data) {
-    if (!err) { return cb(data) }
-    return logger.error('\033[31m', "There's no `"
-      + CONF_FILE + "` in your app root directory.", '\033[0m')
+function getConfigFile(name) {
+  var eid = 'getConfig'
+  fs.readFile(name, 'utf8', function(err, data) {
+    if (!err) {
+      // Convert yaml to json
+      var yaml = require('js-yaml')
+        , json = yaml.load(data)
+      notify.resolve(eid, [json])
+    } else {
+      var errInfo = "There's no `" + name
+        + "` in your app root directory."
+      notify.reject(eid, [errInfo])
+    }
   })
+
+  return notify.promise(eid)
 }
 
 function outputs(err, stdout, stderr) {
@@ -147,58 +155,69 @@ function localModified(src, dst) {
     && diffRatio !== 1
 }
 
-function pull() {
-  makeTmpDir()
-  getConfig(function(data) {
-    var commit, tag, files
-      , repo, repoUrl, repoPath
-      , conf = yaml.load(data)
-      , repos = conf.repos
+function pullAction(conf) {
+  var commit, tag, files
+    , repo, repoUrl, repoPath
+    , repos = conf.repos
+    , repoPrefix = conf.repoPrefix
 
-    for (var name in repos) {
-      (function(name) {
+  for (var name in repos) {
+    (function(name) {
+      repo = repos[name]
+      repoUrl = 'url' in repo ? repo.url
+        : repoUrl = [repoPrefix, name, '.git'].join('')
+
+      repoPath = getGitPath(repoUrl)
+
+      function hasCloned(repo) {
+        process.chdir(cwd)
+        return fs.existsSync(repo)
+      }
+
+      function pulling() {
         repo = repos[name]
-        repoUrl = 'url' in repo
-          ? repo.url
-          : repoUrl = 'http://code.dapps.douban.com/{name}.git'
-              .replace('{name}', name)
+        files = repo.file || {}
+        commit = repo.tag || repo.commit
 
-        repoPath = getGitPath(repoUrl)
-
-        function hasCloned(repo) {
-          process.chdir(cwd)
-          return fs.existsSync(repo)
+        if (!commit) {
+          pulldown(name).done(function() {
+            copy2app(name, repos[name].file)
+          })
+        } else {
+          reset(name, commit).done(function() {
+            process.chdir(cwd)
+            logger.info('HEAD is now at', commit)
+            copy2app(name, repos[name].file)
+          })
         }
+      }
+      
+      if (hasCloned(repoPath)) {
+        return pulling(name)
+      }
 
-        function pulling() {
-          repo = repos[name]
-          files = repo.file || {}
-          commit = repo.tag || repo.commit
+      clone(repoUrl, repoPath)
+        .done(function() { pulling(name) })
 
-          if (!commit) {
-            pulldown(name).done(function() {
-              copy2app(name, repos[name].file)
-            })
-          } else {
-            reset(name, commit).done(function() {
-              process.chdir(cwd)
-              logger.info('HEAD is now at', commit)
-              copy2app(name, repos[name].file)
-            })
-          }
-        }
-        
-        if (hasCloned(repoPath)) {
-          return pulling(name)
-        }
+    })(name)
+  }
+}
 
-        clone(repoUrl, repoPath)
-          .done(function() { pulling(name) })
+function pull(config) {
+  // Git repositories
+  makeTmpDir()
 
-      })(name)
-    }
-  })
+  // Use `grunt-istatic`
+  if (config) {
+    return pullAction(config)
+  }
+
+  getConfigFile('static.yaml')
+    .done(pullAction)
+    .fail(function(err) {
+      logger.error(err)
+    })
 }
 
 exports.pull = pull
-exports.version = '0.1.7'
+exports.version = '0.2.0'
