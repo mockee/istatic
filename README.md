@@ -6,7 +6,7 @@ Static File Manager
 
 ## Installation
 ```bash
-$ npm install -g node-istatic
+$ npm install node-istatic -g
 ```
 
 ### Example
@@ -21,11 +21,11 @@ repos:
     file:
       /lodash.js: /public/js/lib/
   OzJS:
-    commit: 95cf1fec22
+    commit: 7827c7c605
     url: https://github.com/dexteryy/OzJS.git
     file:
       /oz.js: /public/js/lib/
-      /mod/event.js: /public/js/lib/mod/
+      /eventMaster/eventmaster.js: /public/js/lib/mod/event.js
 ```
 
 and then, run:
