@@ -10,9 +10,15 @@ var fs = require('fs')
 
   , notify = require('./lib/event')()
   , logger = Object.create(console)
+  , slice = Array.prototype.slice
   , PATH_STATIC = '.statictmp/'
   , basename = path.basename
   , cwd = process.cwd()
+
+  , gitHostDict = {
+      github: 'git://github.com/'
+    , bitbucket: 'git://bitbucket.org/'
+    }
 
 cp.exec = (function(fn) {
   var self = this, seq = 0
@@ -25,6 +31,16 @@ cp.exec = (function(fn) {
   }
 })(cp.exec.bind(cp))
 
+function extend(obj) {
+  slice.call(arguments, 1)
+    .forEach(function(source) {
+      for (var prop in source) {
+        obj[prop] = source[prop]
+      }
+    })
+  return obj
+}
+
 function makeTempGitReposDir() {
   fs.existsSync(PATH_STATIC, function(exists) {
     if (exists) { return }
@@ -34,6 +50,12 @@ function makeTempGitReposDir() {
 
 function getGitPath(url) {
   return PATH_STATIC + basename(url.trim(), '.git')
+}
+
+function shortenName(repoName) {
+  repoName = /\//g.test(repoName)
+    ? repoName.split('/')[1] : repoName
+  return repoName
 }
 
 function getConfigFile(filename) {
@@ -114,6 +136,7 @@ function coverFile(src, dstFile) {
 
 function copy2app(repoName, files) {
   logger.info('Starting to copy files...')
+  repoName = shortenName(repoName)
   for (var src in files) {
     copyFile(PATH_STATIC + repoName + src
       , files[src].slice(1))
@@ -137,6 +160,7 @@ function pulldown(name) {
 }
 
 function reset(name, commit) {
+  name = shortenName(name)
   process.chdir(PATH_STATIC + name)
   return cp.exec('git reset --hard ' + commit)
 }
@@ -161,13 +185,15 @@ function pullAction(config) {
   var commit, tag, files
     , repos = config.repos
     , repo, repoUrl, repoPath
-    , repoPrefix = config.repoPrefix
+    , customHostDict = config.gitHostDict
+    , defaultHost = config.gitHost || 'github'
+    , hostDict = extend(gitHostDict, customHostDict)
 
   for (var name in repos) {
     (function(name) {
       repo = repos[name]
-      repoUrl = 'url' in repo ? repo.url
-        : repoUrl = [repoPrefix, name, '.git'].join('')
+      repoUrl = [hostDict['gitHost' in repo
+        ? repo.gitHost : defaultHost], name, '.git'].join('')
 
       repoPath = getGitPath(repoUrl)
 
@@ -217,4 +243,4 @@ function pull(config) {
 }
 
 exports.pull = pull
-exports.version = '0.2.1'
+exports.version = '0.2.2'
