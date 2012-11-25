@@ -15,14 +15,22 @@ Put a file named `static.yaml` to the root of your project repository.
 
 ```yaml
 repos:
-  lodash:
+  gitHostDict:
+    code: http://code.dapps.douban.com/
+
+  arkui:
+    gitHost: code
+    file:
+      /stylus: /public/css/arkui/
+      /pics: /public/pics/
+
+  bestiejs/lodash:
     tag: 0.8.2
-    url: git://github.com/bestiejs/lodash.git
     file:
       /lodash.js: /public/js/lib/
-  OzJS:
+
+  dexteryy/OzJS:
     commit: 7827c7c605
-    url: https://github.com/dexteryy/OzJS.git
     file:
       /oz.js: /public/js/lib/
       /eventMaster/eventmaster.js: /public/js/lib/mod/event.js
@@ -33,3 +41,7 @@ and then, run:
 ```bash
 $ istatic pull
 ```
+
+## License
+Copyright (c) 2012 mockee  
+Licensed under the MIT license.
