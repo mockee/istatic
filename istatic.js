@@ -11,12 +11,13 @@ var fs = require('fs')
   , notify = require('./lib/event')()
   , logger = Object.create(console)
   , PATH_STATIC = '.statictmp/'
+  , basename = path.basename
   , cwd = process.cwd()
 
 cp.exec = (function(fn) {
-  var self = this, fuid = 0
+  var self = this, seq = 0
   return function(command) {
-    var eid = 'callback' + fuid++
+    var eid = 'callback' + seq++
     fn.call(self, command, function(err) {
       notify[err ? 'reject' : 'resolve'](eid, arguments)
     })
@@ -24,7 +25,7 @@ cp.exec = (function(fn) {
   }
 })(cp.exec.bind(cp))
 
-function makeTmpDir() {
+function makeTempGitReposDir() {
   fs.existsSync(PATH_STATIC, function(exists) {
     if (exists) { return }
     fs.mkdir(PATH_STATIC)
@@ -32,19 +33,19 @@ function makeTmpDir() {
 }
 
 function getGitPath(url) {
-  return PATH_STATIC + path.basename(url.trim(), '.git')
+  return PATH_STATIC + basename(url.trim(), '.git')
 }
 
-function getConfigFile(name) {
+function getConfigFile(filename) {
   var eid = 'getConfig'
-  fs.readFile(name, 'utf8', function(err, data) {
+  fs.readFile(filename, 'utf8', function(err, data) {
     if (!err) {
       // Convert yaml to json
       var yaml = require('js-yaml')
         , json = yaml.load(data)
       notify.resolve(eid, [json])
     } else {
-      var errInfo = "There's no `" + name
+      var errInfo = "There's no `" + filename
         + "` in your app root directory."
       notify.reject(eid, [errInfo])
     }
@@ -102,8 +103,8 @@ function copyFile(src, dst, cb) {
     })
   }
 
-  logger.info(' \033[30m', src
-    , '\033[0m->\033[30m', dst, '\033[0m')
+  // GRAY_FG = '\033[90m', END = '\033[0m'
+  logger.info(' \033[90m', src, '\033[0m->\033[90m', dst, '\033[0m')
 }
 
 function coverFile(src, dstFile) {
@@ -140,6 +141,7 @@ function reset(name, commit) {
   return cp.exec('git reset --hard ' + commit)
 }
 
+// Get modified time that used for compare files
 function getMtime(file) {
   return (new Date(fs.statSync(file).mtime)).getTime()
 }
@@ -155,11 +157,11 @@ function localModified(src, dst) {
     && diffRatio !== 1
 }
 
-function pullAction(conf) {
+function pullAction(config) {
   var commit, tag, files
+    , repos = config.repos
     , repo, repoUrl, repoPath
-    , repos = conf.repos
-    , repoPrefix = conf.repoPrefix
+    , repoPrefix = config.repoPrefix
 
   for (var name in repos) {
     (function(name) {
@@ -204,13 +206,8 @@ function pullAction(conf) {
 }
 
 function pull(config) {
-  // Git repositories
-  makeTmpDir()
-
-  // Use `grunt-istatic`
-  if (config) {
-    return pullAction(config)
-  }
+  makeTempGitReposDir()
+  if (config) { return pullAction(config) }
 
   getConfigFile('static.yaml')
     .done(pullAction)
@@ -220,4 +217,4 @@ function pull(config) {
 }
 
 exports.pull = pull
-exports.version = '0.2.0'
+exports.version = '0.2.1'
