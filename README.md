@@ -14,10 +14,10 @@ $ npm install node-istatic -g
 Put a file named `static.yaml` to the root of your project repository.
 
 ```yaml
+gitHostDict:
+  code: http://code.dapps.douban.com/
+  
 repos:
-  gitHostDict:
-    code: http://code.dapps.douban.com/
-
   arkui:
     gitHost: code
     file:
