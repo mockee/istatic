@@ -244,4 +244,4 @@ function pull(config) {
 }
 
 exports.pull = pull
-exports.version = '0.2.2'
+exports.version = '0.2.3'
