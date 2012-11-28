@@ -150,6 +150,7 @@ function clone(url, path) {
 }
 
 function pulldown(name) {
+  name = shortenName(name)
   process.chdir(PATH_STATIC + name)
   return cp.exec('git pull')
     .done(function(err, stdout) {
