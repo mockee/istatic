@@ -206,7 +206,7 @@ function pullAction(config) {
       function pulling() {
         repo = repos[name]
         files = repo.file || {}
-        commit = repo.tag || repo.commit
+        commit = repo.tag || repo.commit || 'HEAD'
 
         if (!commit) {
           pulldown(name).done(function() {
