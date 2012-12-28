@@ -9,7 +9,7 @@ switch (args) {
     istatic.pull()
     break
   case '-V':
-  case 'version':
+  case '--version':
     logger.info(istatic.version)
     break
 }
