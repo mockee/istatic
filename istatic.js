@@ -15,10 +15,12 @@ var fs = require('fs')
   , basename = path.basename
   , availableFiles = {}
   , cwd = process.cwd()
+  , sep = path.sep
 
-  , gitHostDict = {
+  , defaultHostDict = {
       github: 'git://github.com/'
     , bitbucket: 'git://bitbucket.org/'
+    , local: ''
     }
 
 cp.exec = (function(fn) {
@@ -50,12 +52,17 @@ function makeTempGitReposDir() {
 }
 
 function getGitPath(url) {
-  return PATH_STATIC + basename(url.trim(), '.git')
+  var lastItem = url.split(sep).pop()
+    , isLocal = lastItem.indexOf('.git') === -1
+    , repoName = isLocal ? lastItem
+      : basename(url.trim(), '.git')
+
+  return PATH_STATIC + repoName
 }
 
 function shortenName(repoName) {
   repoName = /\//g.test(repoName)
-    ? repoName.split('/')[1] : repoName
+    ? repoName.split('/').pop() : repoName
   return repoName
 }
 
@@ -101,8 +108,7 @@ function copy(src, dst, cb) {
 }
 
 function copyFile(src, dst, cb) {
-  var sep = path.sep
-    , pathArr = dst.split(sep)
+  var pathArr = dst.split(sep)
 
   if (!fs.existsSync(dst)) {
     mkdirp.sync(!pathArr.slice(-1)[0]
@@ -175,10 +181,10 @@ function clone(url, path) {
     .done(outputs)
 }
 
-function pulldown(name) {
+function fetch(name) {
   name = shortenName(name)
   process.chdir(PATH_STATIC + name)
-  return cp.exec('git pull origin HEAD')
+  return cp.exec('git fetch --all')
     .done(function(err, stdout) {
       logger.log('`' + name + '`'
         , stdout.split('\n')[0])
@@ -189,6 +195,8 @@ function pulldown(name) {
 function reset(name, commit) {
   name = shortenName(name)
   process.chdir(PATH_STATIC + name)
+  commit = commit || 'origin/master'
+  logger.info('HEAD is now at', commit)
   return cp.exec('git reset --hard ' + commit)
 }
 
@@ -208,59 +216,56 @@ function localModified(src, dst) {
 }
 
 function pullAction(config) {
-  var commit, tag, files
+  var commit, files
     , repos = config.repos
     , repo, repoUrl, repoPath
-    , customHostDict = config.gitHostDict
-    , defaultHost = config.gitHost || 'github'
-    , hostDict = extend(gitHostDict, customHostDict)
+    , customHostDict = config.hostDict
+    , defaultHost = config.host || 'github'
+    , hostDict = extend(defaultHostDict, customHostDict)
+
+  function generateRepoUrl(host, name) {
+    return [hostDict[host], name, '.git'].join('')
+  }
+
+  function copyAfterReset(name) {
+    repo = repos[name]
+    commit = repo.tag || repo.commit
+    reset(name, commit).done(function() {
+      process.chdir(cwd)
+      copy2app(name, repos[name].file)
+    })
+  }
+
+  function hasCloned(repo) {
+    process.chdir(cwd)
+    return fs.existsSync(repo)
+  }
 
   for (var name in repos) {
     (function(name) {
       repo = repos[name]
-      repoUrl = [hostDict['gitHost' in repo
-        ? repo.gitHost : defaultHost], name, '.git'].join('')
+      repoUrl = 'host' in repo
+        ? repo.host === 'local'
+          ? name : generateRepoUrl(repo.host, name)
+        : generateRepoUrl(defaultHost, name)
 
       repoPath = getGitPath(repoUrl)
 
-      function hasCloned(repo) {
-        process.chdir(cwd)
-        return fs.existsSync(repo)
-      }
-
-      function pulling() {
-        repo = repos[name]
-        commit = repo.tag || repo.commit
-
-        var repoName = shortenName(name)
-          , files = repo.file
-
-        for (var src in files) {
-          diffFile(PATH_STATIC + repoName + src.trim()
-            , files[src].slice(1))
-        }
-
-        if (!commit) {
-          pulldown(name).done(function() {
-            copy2app(name, files)
-          })
-        } else {
-          reset(name, commit).done(function() {
-            process.chdir(cwd)
-            logger.info('HEAD is now at', commit)
-            copy2app(name, files)
-          })
-        }
-      }
-
       if (hasCloned(repoPath)) {
-        return pulling(name)
+        files = repos[name].file
+        for (var src in files) {
+          diffFile(PATH_STATIC + shortenName(name)
+            + src.trim(), files[src].slice(1))
+        }
+
+        fetch(name).done(function() {
+          copyAfterReset(name)
+        })
+      } else {
+        clone(repoUrl, repoPath).done(function() {
+          copyAfterReset(name)
+        })
       }
-
-      clone(repoUrl, repoPath).done(function() {
-        copy2app(name, repos[name].file)
-      })
-
     })(name)
   }
 }
@@ -277,4 +282,4 @@ function pull(config) {
 }
 
 exports.pull = pull
-exports.version = '0.2.5'
+exports.version = '0.2.6'
