@@ -14,12 +14,12 @@ $ npm install node-istatic -g
 Put a file named `static.yaml` to the root of your project repository.
 
 ```yaml
-gitHostDict:
+hostDict:
   code: http://code.dapps.douban.com/
-  
+
 repos:
   arkui:
-    gitHost: code
+    host: code
     file:
       /stylus: /public/css/arkui/
       /pics: /public/pics/
@@ -34,6 +34,13 @@ repos:
     file:
       /oz.js: /public/js/lib/
       /eventMaster/eventmaster.js: /public/js/lib/mod/event.js
+
+  /Users/mockee/M3:
+    host: local
+    tag: 1.0.0
+    file:
+      /define.js /public/js/lib/
+      /mod/touch.js /public/js/mod/
 ```
 
 and then, run:
@@ -43,5 +50,5 @@ $ istatic pull
 ```
 
 ## License
-Copyright (c) 2012 mockee  
+Copyright (c) 2012 mockee
 Licensed under the MIT license.
