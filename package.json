@@ -1,5 +1,5 @@
 {
-  "name": "istatic",
+  "name": "node-istatic",
   "description": "Static File Manager.",
   "version": "0.2.7",
   "homepage": "https://github.com/mockee/istatic",
