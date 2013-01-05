@@ -9,6 +9,7 @@ var fs = require('fs')
   , cp = require('child_process')
 
   , notify = require('./lib/event')()
+  , keys = Object.keys
   , logger = Object.create(console)
   , slice = Array.prototype.slice
   , PATH_STATIC = '.statictmp/'
@@ -34,6 +35,11 @@ cp.exec = (function(fn) {
   }
 })(cp.exec.bind(cp))
 
+logger.istatic = function() {
+  var args = slice.call(arguments).join(' ')
+  return logger.info('istatic', args)
+}
+
 function extend(obj) {
   slice.call(arguments, 1)
     .forEach(function(source) {
@@ -42,6 +48,19 @@ function extend(obj) {
       }
     })
   return obj
+}
+
+function colour(color) {
+  var str = slice.call(arguments, 1).join(' ')
+    , colors = {
+        red: '\033[31m'
+      , cyan: '\033[36m'
+      , grey: '\033[90m'
+      , white: '\033[37m'
+      , yellow: '\033[33m'
+      }
+
+  return [colors[color], str, '\033[0m'].join('')
 }
 
 function makeTempGitReposDir() {
@@ -124,8 +143,7 @@ function copyFile(src, dst, cb) {
       && fs.existsSync(dstFile)
       && localModified(src, dstFile)) {
         return logger.info(
-          '\033[31mIGNORED (file)'
-        , dstFile, '\033[0m')
+          colour('red', '  IGNORED (file)', dstFile))
     }
 
     copy(src, dstFile)
@@ -151,10 +169,7 @@ function diffFile(src, dst) {
       , dstFile = dstIsDir ? dst
           + src.split(sep).slice(-1)[0] : dst
 
-    if (localModified(src, dstFile)) {
-      return logger.info('`' + dstFile + '`'
-        , 'has been modified in local. Ignored automatically.')
-    } else {
+    if (!localModified(src, dstFile)) {
       availableFiles[src] = dstFile
     }
   } else if (fs.statSync(src).isDirectory()) {
@@ -167,8 +182,13 @@ function diffFile(src, dst) {
 }
 
 function copy2app(repoName, files) {
-  logger.info('Starting to copy files...')
   repoName = shortenName(repoName)
+  var size = keys(files).length
+    , filesText = [size, ' file', size > 1 ? 's' : ''].join('')
+
+  logger.istatic(colour('cyan', 'copying')
+    , colour('white', filesText))
+
   for (var src in files) {
     copyFile(PATH_STATIC + repoName + src.trim()
       , files[src].slice(1))
@@ -176,28 +196,33 @@ function copy2app(repoName, files) {
 }
 
 function clone(url, path) {
-  return cp
-    .exec(['git clone', url, path].join(' '))
-    .done(outputs)
+  var cmd = ['git clone', url, path].join(' ')
+  return cp.exec(cmd).done(function(a) {
+    logger.istatic(colour('cyan', 'cloning')
+      , colour('yellow', url))
+  })
 }
 
 function fetch(name) {
   name = shortenName(name)
   process.chdir(PATH_STATIC + name)
+
   return cp.exec('git fetch --all')
     .done(function(err, stdout) {
-      logger.log('`' + name + '`'
-        , stdout.split('\n')[0])
       process.chdir(cwd)
     })
 }
 
 function reset(name, commit) {
   name = shortenName(name)
-  process.chdir(PATH_STATIC + name)
   commit = commit || 'origin/master'
-  logger.info('HEAD is now at', commit)
+  process.chdir(PATH_STATIC + name)
+
   return cp.exec('git reset --hard ' + commit)
+    .done(function() {
+      logger.istatic(colour('cyan', 'pulling')
+        , colour('yellow', name, '(' + commit + ')'))
+    })
 }
 
 // Get modified time that used for compare files
@@ -281,5 +306,14 @@ function pull(config) {
     })
 }
 
+function clear(name) {
+  var rimraf = require('rimraf')
+  rimraf(PATH_STATIC, function(err) {
+    if (!err) { return }
+    console.error(err)
+  })
+}
+
 exports.pull = pull
-exports.version = '0.2.6'
+exports.clear = clear
+exports.version = '0.2.7'
