@@ -12,4 +12,7 @@ switch (args) {
   case '--version':
     logger.info(istatic.version)
     break
+  case 'clear':
+    istatic.clear()
+    break
 }
