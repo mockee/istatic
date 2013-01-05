@@ -1,7 +1,7 @@
 {
-  "name": "node-istatic",
+  "name": "istatic",
   "description": "Static File Manager.",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "homepage": "https://github.com/mockee/istatic",
   "author": {
     "name": "mockee",
@@ -40,6 +40,7 @@
   "dependencies": {
     "mkdirp": ">=0.3.4",
     "js-yaml": ">=1.0.2",
-    "difflib": ">=0.2.4"
+    "difflib": ">=0.2.4",
+    "rimraf": "*"
   }
 }
