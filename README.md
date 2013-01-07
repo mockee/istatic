@@ -11,7 +11,7 @@ $ npm install node-istatic -g
 
 ### Example
 
-Put a file named `static.yaml` to the root of your project repository.
+Put a file named `static.yaml` at the root of your project repository.
 
 ```yaml
 hostDict:
