@@ -4,19 +4,36 @@
 
 Static File Manager
 
-## Installation
+### Installation
 ```bash
 $ npm install node-istatic -g
 ```
 
-### Example
+### Usage
 
-Put a file named `static.yaml` at the root of your project repository.
+Put a file named `static.yaml` (refer to the following __Configuration__) at the root of your project repository.
+And then, run:
+
+```bash
+$ istatic pull
+```
+
+### Configuration
+
+You can specify any git hosting provider, such as:
 
 ```yaml
 hostDict:
   code: http://code.dapps.douban.com/
+  gitcafe: git://gitcafe.com/
+```
+Note: iStatic has been added __github__, __bitbucket__ and __local__ by default.
 
+Specify the git repos info (including __name__, __host__, __tag__ or __commit__) and the path of the files or directories you need.
+The default host is __github__, and the default commit (or tag) is __origin/master__. These two properties can be omitted.
+But you need to specify one __file__ mapping (origin: target) at least. It sounds to be a little complicated, here's a example:
+
+```yaml
 repos:
   arkui:
     host: code
@@ -43,12 +60,10 @@ repos:
       /mod/touch.js /public/js/mod/
 ```
 
-and then, run:
+### Grunt task
 
-```bash
-$ istatic pull
-```
+[Grunt-istatic](https://github.com/mockee/grunt-istatic) task now available.
 
 ## License
-Copyright (c) 2012 mockee
+Copyright (c) 2013 mockee
 Licensed under the MIT license.
