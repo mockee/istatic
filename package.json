@@ -1,7 +1,7 @@
 {
   "name": "node-istatic",
   "description": "Static File Manager.",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "homepage": "https://github.com/mockee/istatic",
   "author": {
     "name": "mockee",

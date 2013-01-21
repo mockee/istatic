@@ -7,13 +7,14 @@ var fs = require('fs')
   , mkdirp = require('mkdirp')
   , difflib = require('difflib')
   , cp = require('child_process')
-
   , notify = require('./lib/event')()
+
+  , slice = [].slice
   , keys = Object.keys
   , logger = Object.create(console)
-  , slice = Array.prototype.slice
   , PATH_STATIC = '.statictmp/'
   , basename = path.basename
+  , extname = path.extname
   , availableFiles = {}
   , cwd = process.cwd()
   , sep = path.sep
@@ -51,8 +52,7 @@ function extend(obj) {
 }
 
 function colour(color) {
-  var str = slice.call(arguments, 1).join(' ')
-    , colors = {
+  var colors = {
         red: '\033[31m'
       , cyan: '\033[36m'
       , grey: '\033[90m'
@@ -60,7 +60,9 @@ function colour(color) {
       , yellow: '\033[33m'
       }
 
-  return [colors[color], str, '\033[0m'].join('')
+  return [colors[color]
+    , slice.call(arguments, 1).join(' ')
+    , '\033[0m'].join('')
 }
 
 function makeTempGitReposDir() {
@@ -107,6 +109,19 @@ function outputs(err, stdout, stderr) {
   logger.info(stdout.split('\n')[0])
 }
 
+function filterFiles(src) {
+  var fileType = extname(src).slice(1)
+    , allowedFileTypes = [
+        'html', 'jade', 'js', 'coffee'
+      , 'css', 'styl', 'sass', 'scss'
+      , 'png', 'jpg', 'jpeg', 'gif'
+      ]
+
+  return fs.statSync(src).isFile()
+    ? allowedFileTypes.indexOf(fileType) !== -1
+    : !/^\./.test(src.split('/').pop())
+}
+
 function copy(src, dst, cb) {
   function copyHelper(err) {
     var is, os
@@ -126,8 +141,11 @@ function copy(src, dst, cb) {
   fs.stat(dst, copyHelper)
 }
 
-function copyFile(src, dst, cb) {
+function copyFile(src, dst) {
   var pathArr = dst.split(sep)
+    , isLegalType = filterFiles(src)
+
+  if (!isLegalType) { return }
 
   if (!fs.existsSync(dst)) {
     mkdirp.sync(!pathArr.slice(-1)[0]
@@ -137,7 +155,7 @@ function copyFile(src, dst, cb) {
   if (fs.statSync(src).isFile()) {
     var dstIsDir = dst.substr(-1) === sep
       , dstFile = dstIsDir ? dst
-          + src.split(sep).slice(-1)[0] : dst
+          + src.split(sep).pop() : dst
 
     if (!(src in availableFiles)
       && fs.existsSync(dstFile)
@@ -146,15 +164,17 @@ function copyFile(src, dst, cb) {
           colour('red', '  IGNORED (file)', dstFile))
     }
 
-    copy(src, dstFile)
-    // GRAY_FG = '\033[90m', END = '\033[0m'
-    logger.info(' \033[90m', src
-      , '\033[0m->\033[90m', dst, '\033[0m')
+    copy(src, dstFile, function(err) {
+      if (err) { return }
+      logger.info(' \033[90m', src
+        , '\033[0m->\033[90m', dst, '\033[0m')
+    })
 
   } else if (fs.statSync(src).isDirectory()) {
     fs.readdirSync(src).forEach(function(name) {
-      var srcPath = [src, name].join(sep)
+      var srcPath = [src.replace(/\/$/g, ''), name].join(sep)
         , isDir = fs.statSync(srcPath).isDirectory()
+
       copyFile(srcPath, isDir ? dst + name + sep : dst)
     })
   }
@@ -163,6 +183,10 @@ function copyFile(src, dst, cb) {
 function diffFile(src, dst) {
   var sep = path.sep
     , pathArr = dst.split(sep)
+    , isLegalType = filterFiles(src)
+    , noDstFile = fs.existsSync(dst)
+
+  if (!isLegalType || !noDstFile) { return }
 
   if (fs.statSync(src).isFile()) {
     var dstIsDir = dst.substr(-1) === sep
@@ -181,13 +205,33 @@ function diffFile(src, dst) {
   }
 }
 
+function outputFilesNum(files) {
+  var dirNum = 0, fileNum = 0
+
+  function combinText(typeNum) {
+    var type, num, t, text = ''
+    for (t in typeNum) {
+      num = typeNum[t]
+      text += (!num ? '' : (!text ? '' : ' and ')
+        + [num, num > 1 ? t + 's' : t].join(' '))
+    }
+    return text
+  }
+
+  keys(files).forEach(function(n) {
+    if (!!extname(n)) { fileNum++ }
+    else { dirNum++ }
+  })
+
+  return combinText({
+    file: fileNum, dir: dirNum
+  })
+}
+
 function copy2app(repoName, files) {
   repoName = shortenName(repoName)
-  var size = keys(files).length
-    , filesText = [size, ' file', size > 1 ? 's' : ''].join('')
-
   logger.istatic(colour('cyan', 'copying')
-    , colour('white', filesText))
+    , colour('white', outputFilesNum(files)))
 
   for (var src in files) {
     copyFile(PATH_STATIC + repoName + src.trim()
@@ -316,4 +360,4 @@ function clear(name) {
 
 exports.pull = pull
 exports.clear = clear
-exports.version = '0.2.7'
+exports.version = '0.2.8'
