@@ -130,9 +130,11 @@ function copy(src, dst, cb) {
       is = fs.createReadStream(src)
       os = fs.createWriteStream(dst)
 
-      util.pump(is, os, function(err) {
-        if (err) { return cb(err) }
+      is.pipe(os)
+      is.on('end', function() {
         fs.utimes(dst, stat.atime, stat.mtime, cb)
+      }).on('error', function(err) {
+        if (err) { return cb(err) }
       })
     })
   }
@@ -360,4 +362,4 @@ function clear(name) {
 
 exports.pull = pull
 exports.clear = clear
-exports.version = '0.2.8'
+exports.version = '0.2.8.1'
