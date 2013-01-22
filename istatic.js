@@ -362,4 +362,4 @@ function clear(name) {
 
 exports.pull = pull
 exports.clear = clear
-exports.version = '0.2.8.1'
+exports.version = '0.2.9'
