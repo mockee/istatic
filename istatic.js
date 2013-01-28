@@ -88,7 +88,7 @@ function shortenName(repoName) {
 }
 
 function normalizeName(name){
-    return name.trim().replace(/^\//, './');
+  return name.trim().replace(/^\//, './');
 }
 
 function getConfigFile(filename) {
@@ -172,7 +172,8 @@ function copyFile(src, dst) {
 
     copy(src, dstFile, function(err) {
       if (err) { return }
-      logger.info(' \033[90m', src
+      logger.info(' \033[90m'
+        , src.replace(path.resolve(cwd), '').replace(/^\//, '')
         , '\033[0m->\033[90m', dst, '\033[0m')
     })
 
