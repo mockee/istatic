@@ -7,12 +7,12 @@ var fs = require('fs')
   , mkdirp = require('mkdirp')
   , difflib = require('difflib')
   , cp = require('child_process')
-  , notify = require('./lib/event')()
+  , event = require('./lib/event')
 
   , slice = [].slice
   , keys = Object.keys
   , logger = Object.create(console)
-  , PATH_STATIC = '.statictmp/'
+  , PATH_STATIC = path.resolve('.statictmp/')
   , basename = path.basename
   , extname = path.extname
   , availableFiles = {}
@@ -28,11 +28,11 @@ var fs = require('fs')
 cp.exec = (function(fn) {
   var self = this, seq = 0
   return function(command) {
-    var eid = 'callback' + seq++
+    var promise = new event.Promise()
     fn.call(self, command, function(err) {
-      notify[err ? 'reject' : 'resolve'](eid, arguments)
+      promise[err ? 'reject' : 'resolve'](arguments)
     })
-    return notify.promise(eid)
+    return promise
   }
 })(cp.exec.bind(cp))
 
@@ -78,7 +78,7 @@ function getGitPath(url) {
     , repoName = isLocal ? lastItem
       : basename(url.trim(), '.git')
 
-  return PATH_STATIC + repoName
+  return path.resolve(PATH_STATIC, repoName)
 }
 
 function shortenName(repoName) {
@@ -87,22 +87,26 @@ function shortenName(repoName) {
   return repoName
 }
 
+function normalizeName(name){
+  return name.trim().replace(/^\//, './');
+}
+
 function getConfigFile(filename) {
-  var eid = 'getConfig'
+  var promise = new event.Promise()
   fs.readFile(filename, 'utf8', function(err, data) {
     if (!err) {
       // Convert yaml to json
       var yaml = require('js-yaml')
         , json = yaml.load(data)
-      notify.resolve(eid, [json])
+      promise.resolve([json])
     } else {
       var errInfo = "There's no `" + filename
         + "` in your app root directory."
-      notify.reject(eid, [errInfo])
+      promise.reject([errInfo])
     }
   })
 
-  return notify.promise(eid)
+  return promise
 }
 
 function outputs(err, stdout, stderr) {
@@ -168,7 +172,8 @@ function copyFile(src, dst) {
 
     copy(src, dstFile, function(err) {
       if (err) { return }
-      logger.info(' \033[90m', src
+      logger.info(' \033[90m'
+        , src.replace(path.resolve(cwd), '').replace(/^\//, '')
         , '\033[0m->\033[90m', dst, '\033[0m')
     })
 
@@ -236,8 +241,8 @@ function copy2app(repoName, files) {
     , colour('white', outputFilesNum(files)))
 
   for (var src in files) {
-    copyFile(PATH_STATIC + repoName + src.trim()
-      , files[src].slice(1))
+    copyFile(path.resolve(PATH_STATIC, repoName, normalizeName(src))
+      , normalizeName(files[src]))
   }
 }
 
@@ -251,7 +256,7 @@ function clone(url, path) {
 
 function fetch(name) {
   name = shortenName(name)
-  process.chdir(PATH_STATIC + name)
+  process.chdir(path.resolve(PATH_STATIC, name))
 
   return cp.exec('git fetch --all')
     .done(function(err, stdout) {
@@ -262,7 +267,7 @@ function fetch(name) {
 function reset(name, commit) {
   name = shortenName(name)
   commit = commit || 'origin/master'
-  process.chdir(PATH_STATIC + name)
+  process.chdir(path.resolve(PATH_STATIC, name))
 
   return cp.exec('git reset --hard ' + commit)
     .done(function() {
@@ -277,6 +282,9 @@ function getMtime(file) {
 }
 
 function localModified(src, dst) {
+  if (!fs.existsSync(dst)) {
+      return false;
+  }
   var srcStr = fs.readFileSync(src, 'UTF-8')
     , dstStr = fs.readFileSync(dst, 'UTF-8')
     , diffRatio = (new difflib
@@ -325,8 +333,8 @@ function pullAction(config) {
       if (hasCloned(repoPath)) {
         files = repos[name].file
         for (var src in files) {
-          diffFile(PATH_STATIC + shortenName(name)
-            + src.trim(), files[src].slice(1))
+          diffFile(path.resolve(PATH_STATIC, shortenName(name), 
+            normalizeName(src)), normalizeName(files[src]))
         }
 
         fetch(name).done(function() {
