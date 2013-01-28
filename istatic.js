@@ -88,7 +88,7 @@ function shortenName(repoName) {
 }
 
 function normalizeName(name){
-    return name.trim().replace(/^\//, './');
+  return name.trim().replace(/^\//, './');
 }
 
 function getConfigFile(filename) {
