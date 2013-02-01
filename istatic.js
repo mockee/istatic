@@ -7,7 +7,7 @@ var fs = require('fs')
   , mkdirp = require('mkdirp')
   , difflib = require('difflib')
   , cp = require('child_process')
-  , event = require('./lib/event')
+  , eventMaster = require('./lib/event')
 
   , slice = [].slice
   , keys = Object.keys
@@ -28,7 +28,7 @@ var fs = require('fs')
 cp.exec = (function(fn) {
   var self = this, seq = 0
   return function(command) {
-    var promise = new event.Promise()
+    var promise = new eventMaster.Promise()
     fn.call(self, command, function(err) {
       promise[err ? 'reject' : 'resolve'](arguments)
     })
@@ -92,7 +92,7 @@ function normalizeName(name){
 }
 
 function getConfigFile(filename) {
-  var promise = new event.Promise()
+  var promise = new eventMaster.Promise()
   fs.readFile(filename, 'utf8', function(err, data) {
     if (!err) {
       // Convert yaml to json
@@ -333,7 +333,7 @@ function pullAction(config) {
       if (hasCloned(repoPath)) {
         files = repos[name].file
         for (var src in files) {
-          diffFile(path.resolve(PATH_STATIC, shortenName(name), 
+          diffFile(path.resolve(PATH_STATIC, shortenName(name),
             normalizeName(src)), normalizeName(files[src]))
         }
 
@@ -370,4 +370,4 @@ function clear(name) {
 
 exports.pull = pull
 exports.clear = clear
-exports.version = '0.2.9'
+exports.version = '0.3.0'

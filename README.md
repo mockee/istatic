@@ -38,26 +38,21 @@ repos:
   arkui:
     host: code
     file:
-      /stylus: /public/css/arkui/
-      /pics: /public/pics/
-
-  bestiejs/lodash:
-    tag: 0.8.2
-    file:
-      /lodash.js: /public/js/lib/
+      ./stylus: ./public/css/arkui/
+      ./pics: ./public/pics/
 
   dexteryy/OzJS:
-    commit: 7827c7c605
+    tag: 2.5.1
     file:
-      /oz.js: /public/js/lib/
-      /eventMaster/eventmaster.js: /public/js/lib/mod/event.js
+      ./oz.js: ./public/js/lib/
+      ./eventMaster/eventmaster.js: ./public/js/lib/mod/event.js
 
   /Users/mockee/M3:
     host: local
-    tag: 1.0.0
+    commit: 7827c7c605
     file:
-      /define.js /public/js/lib/
-      /mod/touch.js /public/js/mod/
+      ./define.js ./public/js/lib/
+      ./mod/touch.js ./public/js/mod/
 ```
 
 ### Grunt task
