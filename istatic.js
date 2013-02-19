@@ -309,7 +309,7 @@ function pullAction(config) {
   function copyAfterReset(name) {
     repo = repos[name]
     commit = repo.tag || repo.commit
-    reset(name, commit).done(function() {
+    return reset(name, commit).done(function() {
       process.chdir(cwd)
       copy2app(name, repos[name].file)
     })
@@ -319,6 +319,8 @@ function pullAction(config) {
     process.chdir(cwd)
     return fs.existsSync(repo)
   }
+
+  var promises = []
 
   for (var name in repos) {
     (function(name) {
@@ -337,27 +339,29 @@ function pullAction(config) {
             normalizeName(src)), normalizeName(files[src]))
         }
 
-        fetch(name).done(function() {
-          copyAfterReset(name)
-        })
+        promises.push(fetch(name).done(function() {
+          return copyAfterReset(name)
+        }).follow())
       } else {
-        clone(repoUrl, repoPath).done(function() {
-          copyAfterReset(name)
-        })
+        promises.push(clone(repoUrl, repoPath).done(function() {
+          return copyAfterReset(name)
+        }).follow())
       }
     })(name)
   }
+
+  return eventMaster.when.apply(this, promises)
 }
 
-function pull(config) {
+function pull(config, cb) {
   makeTempGitReposDir()
-  if (config) { return pullAction(config) }
+  if (config) { return pullAction(config).then(cb) }
 
   getConfigFile('static.yaml')
     .done(pullAction)
     .fail(function(err) {
       logger.error(err)
-    })
+    }).follow().then(cb)
 }
 
 function clear(name) {
