@@ -98,6 +98,7 @@ function getConfigFile(filename) {
       // Convert yaml to json
       var yaml = require('js-yaml')
         , json = yaml.load(data)
+
       promise.resolve([json])
     } else {
       var errInfo = "There's no `" + filename
@@ -334,6 +335,7 @@ function pullAction(config) {
 
       if (hasCloned(repoPath)) {
         files = repos[name].file
+
         for (var src in files) {
           diffFile(path.resolve(PATH_STATIC, shortenName(name),
             normalizeName(src)), normalizeName(files[src]))
@@ -374,4 +376,4 @@ function clear(name) {
 
 exports.pull = pull
 exports.clear = clear
-exports.version = '0.3.0'
+exports.version = '0.3.1'
