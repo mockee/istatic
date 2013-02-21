@@ -51,13 +51,19 @@ repos:
     host: local
     commit: 7827c7c605
     file:
-      ./define.js ./public/js/lib/
-      ./mod/touch.js ./public/js/mod/
+      ./define.js: ./public/js/lib/
+      ./mod/touch.js: ./public/js/mod/
 ```
 
 ### Grunt task
 
 [Grunt-istatic](https://github.com/mockee/grunt-istatic) task now available.
+
+## Release History
+
+- 2013-02-22 - v0.3.1 - Support async callback for `grunt-istatic`.
+- 2013-02-07 - v0.2.7 - Support local git repos. Format logs. Add `--version` & `clear` options.
+- 2012-12-06 - v0.2.5 - Bugfix for `pulldown` && checking local files modification.
 
 ## License
 Copyright (c) 2013 mockee
