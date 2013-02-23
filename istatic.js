@@ -7,7 +7,7 @@ var fs = require('fs')
   , mkdirp = require('mkdirp')
   , difflib = require('difflib')
   , cp = require('child_process')
-  , eventMaster = require('./lib/event')
+  , eventMaster = require('eventmaster')
 
   , slice = [].slice
   , keys = Object.keys
