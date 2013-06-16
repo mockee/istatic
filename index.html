@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>iStatic by mockee</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>iStatic</h1>
+        <p>Static File Manager</p>
+
+        <p class="view"><a href="https://github.com/mockee/istatic">View the Project on GitHub <small>mockee/istatic</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/mockee/istatic/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/mockee/istatic/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/mockee/istatic">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h3>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h3>
+
+<div class="highlight"><pre><span class="nv">$ </span>npm install node-istatic -g
+</pre></div>
+
+<h3>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h3>
+
+<p>Put a file named <code>static.yaml</code> (refer to the following <strong>Configuration</strong>) at the root of your project repository.
+And then, run:</p>
+
+<div class="highlight"><pre><span class="nv">$ </span>istatic pull
+</pre></div>
+
+<h3>
+<a name="configuration" class="anchor" href="#configuration"><span class="octicon octicon-link"></span></a>Configuration</h3>
+
+<p>You can specify any git hosting provider, such as:</p>
+
+<div class="highlight"><pre><span class="l-Scalar-Plain">hostDict</span><span class="p-Indicator">:</span>
+  <span class="l-Scalar-Plain">code</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">http://code.dapps.douban.com/</span>
+  <span class="l-Scalar-Plain">gitcafe</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">git://gitcafe.com/</span>
+</pre></div>
+
+<p>Note: iStatic has been added <strong>github</strong>, <strong>bitbucket</strong> and <strong>local</strong> by default.</p>
+
+<p>Specify the git repos info (including <strong>name</strong>, <strong>host</strong>, <strong>tag</strong> or <strong>commit</strong>) and the path of the files or directories you need.
+The default host is <strong>github</strong>, and the default commit (or tag) is <strong>origin/master</strong>. These two properties can be omitted.
+But you need to specify one <strong>file</strong> mapping (origin: target) at least. It sounds to be a little complicated, here's a example:</p>
+
+<div class="highlight"><pre><span class="l-Scalar-Plain">repos</span><span class="p-Indicator">:</span>
+  <span class="l-Scalar-Plain">arkui</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">host</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">code</span>
+    <span class="l-Scalar-Plain">file</span><span class="p-Indicator">:</span>
+      <span class="l-Scalar-Plain">./stylus</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">./public/css/arkui/</span>
+      <span class="l-Scalar-Plain">./pics</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">./public/pics/</span>
+
+  <span class="l-Scalar-Plain">dexteryy/OzJS</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">tag</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">2.5.1</span>
+    <span class="l-Scalar-Plain">file</span><span class="p-Indicator">:</span>
+      <span class="l-Scalar-Plain">./oz.js</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">./public/js/lib/</span>
+      <span class="l-Scalar-Plain">./eventMaster/eventmaster.js</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">./public/js/lib/mod/event.js</span>
+
+  <span class="l-Scalar-Plain">/Users/mockee/M3</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">host</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">local</span>
+    <span class="l-Scalar-Plain">commit</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">7827c7c605</span>
+    <span class="l-Scalar-Plain">file</span><span class="p-Indicator">:</span>
+      <span class="l-Scalar-Plain">./define.js</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">./public/js/lib/</span>
+      <span class="l-Scalar-Plain">./mod/touch.js</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">./public/js/mod/</span>
+</pre></div>
+
+<h3>
+<a name="grunt-task" class="anchor" href="#grunt-task"><span class="octicon octicon-link"></span></a>Grunt task</h3>
+
+<p><a href="https://github.com/mockee/grunt-istatic">Grunt-istatic</a> task now available.</p>
+
+<h2>
+<a name="release-history" class="anchor" href="#release-history"><span class="octicon octicon-link"></span></a>Release History</h2>
+
+<ul>
+<li>2013-02-22 - v0.3.1 - Support async callback for <code>grunt-istatic</code>.</li>
+<li>2013-02-07 - v0.2.7 - Support local git repos. Format logs. Add <code>--version</code> &amp; <code>clear</code> options.</li>
+<li>2012-12-06 - v0.2.5 - Bugfix for <code>pulldown</code> &amp;&amp; checking local files modification.</li>
+</ul><h2>
+<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>Copyright (c) 2013 mockee
+Licensed under the MIT license.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/mockee">mockee</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
